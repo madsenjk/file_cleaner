@@ -2,15 +2,16 @@
 import os
 import re
 import fnmatch
+from hurry.filesize import size
+
 
 print('Welcome to the fancy file cleaner. We will first confirm your raw files are backed up,')
 print('and then we will confirm your desire to delete local copies of raw files.')
 print('')
 
-two_digit_month = raw_input("Which two digit month would you like to delete from 2018? ")
+two_digit_month = input("Which two digit month would you like to delete from 2018? ")
 built_regex = r'2018-' + two_digit_month + r'-\d\d'
 print('regex created to search for: ' + built_regex)
-
 
 # Check attached backup first to get counts of backed up files meeting criteria
 # initialize variables for current directory, regex compiled pattern, and result lists
@@ -33,6 +34,7 @@ for backup_working_dir in backup_dir_match_list:
         if fnmatch.fnmatch(backup_match_file, '*.ARW'):
             backup_file_match_list.append(backup_match_file.__str__())
 
+
 # show count of located files in local hdd
 print('Raw file count on backup hdd for 2018 and month of ' + two_digit_month + ': ' + str(len(backup_file_match_list)))
 
@@ -44,6 +46,7 @@ initial_dir = os.getcwd()
 dirpattern = re.compile(built_regex)
 dirmatchlist = []
 filematchlist = []
+total_space_saved = 0
 
 # build a list of all 1st level directories, and parse vs regex
 print('Parsing subdirectories located in ' + os.getcwd())
@@ -57,11 +60,13 @@ for working_dir in dirmatchlist:
     for matchfile in os.listdir(os.getcwd()):
         if fnmatch.fnmatch(matchfile, '*.ARW'):
             filematchlist.append(matchfile.__str__())
+            # print(os.stat(matchfile).st_size)
+            total_space_saved += os.stat(matchfile).st_size
 
-# show count of located files in local hdd
 print('Raw file count on local hdd for 2018 and month of ' + two_digit_month + ': ' + str(len(filematchlist)))
+print('Total space to be saved, in bytes after delete is: ' + size(total_space_saved))
 
-continue_with_delete = raw_input("Would you like to proceed with local raw file delete? (yes/no): ")
+continue_with_delete = input("Would you like to proceed with local raw file delete? (yes/no): ")
 
 if continue_with_delete == 'yes':
     for doomed_file in filematchlist:
