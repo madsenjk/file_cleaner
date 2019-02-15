@@ -4,67 +4,49 @@ import re
 import fnmatch
 from hurry.filesize import size
 
+def traverse_folders(curr_dir, compiled, volume):
+    dirmatchlist = []
+    filematchlist = []
+    total_space_saved = 0
+
+    # build a list of all 1st level directories, and parse vs regex
+    print('Parsing subdirectories located in ' + os.getcwd())
+    for subdiriterator in os.listdir(curr_dir):
+        for founddir in compiled.finditer(subdiriterator):
+            dirmatchlist.append(founddir.string)
+
+    # iterate over directories adding files to a list and track size
+    for working_dir in dirmatchlist:
+        os.chdir(os.path.join(curr_dir, working_dir))
+        for matchfile in os.listdir(os.getcwd()):
+            if fnmatch.fnmatch(matchfile, '*.ARW'):
+                filematchlist.append(matchfile.__str__())
+                # print(os.stat(matchfile).st_size)
+                total_space_saved += os.stat(matchfile).st_size
+
+    print('Raw file count on ' + volume + ' hdd for 2018 and month of ' + two_digit_month + ': ' + str(
+        len(filematchlist)))
+    print('Total space used on ' + volume + ' is: ' + size(total_space_saved))
 
 print('Welcome to the fancy file cleaner. We will first confirm your raw files are backed up,')
 print('and then we will confirm your desire to delete local copies of raw files.')
-print('')
-
-two_digit_month = input("Which two digit month would you like to delete from 2018? ")
+two_digit_month = input("Which two digit month would you like to check from 2018? ")
 built_regex = r'2018-' + two_digit_month + r'-\d\d'
-print('regex created to search for: ' + built_regex)
+# print('regex created to search for: ' + built_regex)
 
 # Check attached backup first to get counts of backed up files meeting criteria
-# initialize variables for current directory, regex compiled pattern, and result lists
 os.chdir('/Volumes/2018 Backup/Pictures/2018')
 initial_backup_dir = os.getcwd()
 backup_dir_pattern = re.compile(built_regex)
-backup_dir_match_list = []
-backup_file_match_list = []
+volume_to_scan = "backup"
+traverse_folders(initial_backup_dir, backup_dir_pattern, volume_to_scan)
 
-# build a list of all 1st level directories, and parse vs regex
-print('Parsing subdirectories located in ' + os.getcwd())
-for backup_sub_dir_iterator in os.listdir(initial_backup_dir):
-    for backup_found_dir in backup_dir_pattern.finditer(backup_sub_dir_iterator):
-        backup_dir_match_list.append(backup_found_dir.string)
-
-# iterate over list of directories and add raw files to a list
-for backup_working_dir in backup_dir_match_list:
-    os.chdir(os.path.join(initial_backup_dir, backup_working_dir))
-    for backup_match_file in os.listdir(os.getcwd()):
-        if fnmatch.fnmatch(backup_match_file, '*.ARW'):
-            backup_file_match_list.append(backup_match_file.__str__())
-
-
-# show count of located files in local hdd
-print('Raw file count on backup hdd for 2018 and month of ' + two_digit_month + ': ' + str(len(backup_file_match_list)))
-
-# now run again for local filesystem - optimize this all into one function :)
-
-# now - init all variables for local (current directory, regex compiled pattern, and result lists)
+# now run again for local filesystem
 os.chdir('/Users/madsen/Pictures/2018')
-initial_dir = os.getcwd()
-dirpattern = re.compile(built_regex)
-dirmatchlist = []
-filematchlist = []
-total_space_saved = 0
-
-# build a list of all 1st level directories, and parse vs regex
-print('Parsing subdirectories located in ' + os.getcwd())
-for subdiriterator in os.listdir(initial_dir):
-    for founddir in dirpattern.finditer(subdiriterator):
-        dirmatchlist.append(founddir.string)
-
-# iterate over list of directories and add raw files to a list
-for working_dir in dirmatchlist:
-    os.chdir(os.path.join(initial_dir, working_dir ))
-    for matchfile in os.listdir(os.getcwd()):
-        if fnmatch.fnmatch(matchfile, '*.ARW'):
-            filematchlist.append(matchfile.__str__())
-            # print(os.stat(matchfile).st_size)
-            total_space_saved += os.stat(matchfile).st_size
-
-print('Raw file count on local hdd for 2018 and month of ' + two_digit_month + ': ' + str(len(filematchlist)))
-print('Total space to be saved, in bytes after delete is: ' + size(total_space_saved))
+initial_local_dir = os.getcwd()
+local_dir_pattern = re.compile(built_regex)
+volume_to_scan = "local"
+traverse_folders(initial_local_dir, local_dir_pattern, volume_to_scan)
 
 continue_with_delete = input("Would you like to proceed with local raw file delete? (yes/no): ")
 
