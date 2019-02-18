@@ -4,7 +4,7 @@ import re
 import fnmatch
 from hurry.filesize import size
 
-def traverse_folders(curr_dir, compiled, volume):
+def traverse_folders(curr_dir, compiled, volume, operation = 'read'):
     dirmatchlist = []
     filematchlist = []
     total_space_saved = 0
@@ -15,24 +15,38 @@ def traverse_folders(curr_dir, compiled, volume):
         for founddir in compiled.finditer(subdiriterator):
             dirmatchlist.append(founddir.string)
 
-    # iterate over directories adding files to a list and track size
+    # iterate over directories adding files to a list and track size, branches for read vs purge
     for working_dir in dirmatchlist:
         os.chdir(os.path.join(curr_dir, working_dir))
-        for matchfile in os.listdir(os.getcwd()):
-            if fnmatch.fnmatch(matchfile, '*.ARW'):
-                filematchlist.append(matchfile.__str__())
-                # print(os.stat(matchfile).st_size)
-                total_space_saved += os.stat(matchfile).st_size
+        if operation == 'read':
+            for matchfile in os.listdir(os.getcwd()):
+                if fnmatch.fnmatch(matchfile, '*.ARW') or fnmatch.fnmatch(matchfile, '*.CR2'):
+                    # or fnmatch.fnmatch(matchfile, '*.MP4'):
+                    filematchlist.append(matchfile.__str__())
+                    total_space_saved += os.stat(matchfile).st_size
+        elif operation == 'purge':
+            for matchfile in os.listdir(os.getcwd()):
+                if fnmatch.fnmatch(matchfile, '*.ARW') or fnmatch.fnmatch(matchfile, '*.CR2'):
+                    # or fnmatch.fnmatch(matchfile, '*.MP4'):
+                    total_space_saved += os.stat(matchfile).st_size
+                    filematchlist.append(matchfile.__str__())
+                    # print('Deleting file ' + matchfile.__str__())
+                    print('Deleting: ' + (os.path.join(os.getcwd(), matchfile.__str__())))
+                    os.remove(os.path.join(os.getcwd(), matchfile.__str__()))
+            if working_dir == dirmatchlist[len(dirmatchlist)-1]:
+                print(str(len(filematchlist)) + ' files deleted!')
+                print(size(total_space_saved) + ' in space freed up!')
+                return
 
-    print('Raw file count on ' + volume + ' hdd for 2018 and month of ' + two_digit_month + ': ' + str(
-        len(filematchlist)))
+    print('Large file count on ' + volume + ' hdd for 2018 and month of '
+          + two_digit_month + ': ' + str(len(filematchlist)))
     print('Total space used on ' + volume + ' is: ' + size(total_space_saved))
 
-print('Welcome to the fancy file cleaner. We will first confirm your raw files are backed up,')
-print('and then we will confirm your desire to delete local copies of raw files.')
+
+print('Welcome to the fancy file cleaner. We will first confirm your large files are backed up,')
+print('and then we will confirm your desire to delete local copies of those files.')
 two_digit_month = input("Which two digit month would you like to check from 2018? ")
 built_regex = r'2018-' + two_digit_month + r'-\d\d'
-# print('regex created to search for: ' + built_regex)
 
 # Check attached backup first to get counts of backed up files meeting criteria
 os.chdir('/Volumes/2018 Backup/Pictures/2018')
@@ -41,20 +55,22 @@ backup_dir_pattern = re.compile(built_regex)
 volume_to_scan = "backup"
 traverse_folders(initial_backup_dir, backup_dir_pattern, volume_to_scan)
 
-# now run again for local filesystem
+# Now run again for local filesystem
 os.chdir('/Users/madsen/Pictures/2018')
 initial_local_dir = os.getcwd()
 local_dir_pattern = re.compile(built_regex)
 volume_to_scan = "local"
 traverse_folders(initial_local_dir, local_dir_pattern, volume_to_scan)
 
-continue_with_delete = input("Would you like to proceed with local raw file delete? (yes/no): ")
-
+# Lastly, check for and run delete traversal
+continue_with_delete = input("Would you like to proceed with local large file delete? (yes/no): ")
 if continue_with_delete == 'yes':
-    for doomed_file in filematchlist:
-        # add actual code to delete - problem here is tha twe didn't save the file/folder structure
-        print('Deleting file ' + doomed_file + ' .... deleted!')
-    print('files deleted!')
+    os.chdir('/Users/madsen/Pictures/2018')
+    directory_to_clean = os.getcwd()
+    local_dir_pattern = re.compile(built_regex)
+    volume_to_scan = "local"
+    traverse_folders(directory_to_clean, local_dir_pattern, volume_to_scan, 'purge')
+    quit()
 else:
-    print('file deletion ABORTED')
+    print('file delete ABORTED')
     quit(0)
