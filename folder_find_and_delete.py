@@ -47,13 +47,19 @@ print('Welcome to the fancy file cleaner. We will first confirm your large files
 print('and then we will confirm your desire to delete local copies of those files.')
 two_digit_month = input("Which two digit month would you like to check from 2018? ")
 built_regex = r'2018-' + two_digit_month + r'-\d\d'
+skip_backup = False
 
 # Check attached backup first to get counts of backed up files meeting criteria
-os.chdir('/Volumes/2018 Backup/Pictures/2018')
-initial_backup_dir = os.getcwd()
-backup_dir_pattern = re.compile(built_regex)
-volume_to_scan = "backup"
-traverse_folders(initial_backup_dir, backup_dir_pattern, volume_to_scan)
+try:
+    os.chdir('/Volumes/2018 Backup/Pictures/2018')
+except FileNotFoundError:
+    print('Backup volume not found. Skipping backup verification')
+    skip_backup = True
+if skip_backup == False:
+    initial_backup_dir = os.getcwd()
+    backup_dir_pattern = re.compile(built_regex)
+    volume_to_scan = "backup"
+    traverse_folders(initial_backup_dir, backup_dir_pattern, volume_to_scan)
 
 # Now run again for local filesystem
 os.chdir('/Users/madsen/Pictures/2018')
