@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/Users/madsen/file_cleaner/bin/python
 import os
 import re
 import fnmatch
@@ -45,13 +45,14 @@ def traverse_folders(curr_dir, compiled, volume, operation = 'read'):
 
 print('Welcome to the fancy file cleaner. We will first confirm your large files are backed up,')
 print('and then we will confirm your desire to delete local copies of those files.')
-two_digit_month = input("Which two digit month would you like to check from 2018? ")
-built_regex = r'2018-' + two_digit_month + r'-\d\d'
+two_digit_year = input("Which two digit year would you like to check? ")
+two_digit_month = input("Which two digit month would you like to check from " + "20" + two_digit_year + "? ")
+built_regex = r'20' + two_digit_year + '-' + two_digit_month + r'-\d\d'
 skip_backup = False
 
 # Check attached backup first to get counts of backed up files meeting criteria
 try:
-    os.chdir('/Volumes/2018 Backup/Pictures/2018')
+    os.chdir('/Volumes/2018 Backup/Pictures/20' + two_digit_year)
 except FileNotFoundError:
     print('Backup volume not found. Skipping backup verification')
     skip_backup = True
@@ -62,7 +63,7 @@ if skip_backup == False:
     traverse_folders(initial_backup_dir, backup_dir_pattern, volume_to_scan)
 
 # Now run again for local filesystem
-os.chdir('/Users/madsen/Pictures/2018')
+os.chdir('/Users/madsen/Pictures/20' + two_digit_year)
 initial_local_dir = os.getcwd()
 local_dir_pattern = re.compile(built_regex)
 volume_to_scan = "local"
@@ -71,7 +72,7 @@ traverse_folders(initial_local_dir, local_dir_pattern, volume_to_scan)
 # Lastly, check for and run delete traversal
 continue_with_delete = input("Would you like to proceed with local large file delete? (yes/no): ")
 if continue_with_delete == 'yes':
-    os.chdir('/Users/madsen/Pictures/2018')
+    os.chdir('/Users/madsen/Pictures/20' + two_digit_year)
     directory_to_clean = os.getcwd()
     local_dir_pattern = re.compile(built_regex)
     volume_to_scan = "local"
